@@ -1,0 +1,14 @@
+{"level":"info","ts":1762826800.3062644,"msg":"Métricas holdout","model":"GradientBoosting","accuracy":0.574173076923077,"f1":0.46164693297026577,"precision":0.34323933477946494,"recall":0.7047732165392324,"roc_auc":0.6452320151054857,"pr_auc":0.36883492281931746,"threshold":0.45}
+{"level":"info","ts":1762826800.3072643,"msg":"Modelo salvo","path":"models/gb_model.gob"}
+{"level":"info","ts":1762826953.4780571,"msg":"Métricas holdout","model":"GradientBoosting","accuracy":0.574173076923077,"f1":0.46164693297026577,"precision":0.34323933477946494,"recall":0.7047732165392324,"roc_auc":0.6452320151054857,"pr_auc":0.36883492281931746,"threshold":0.45}
+{"level":"info","ts":1762826955.0500333,"msg":"Modelo salvo","path":"models/gb_model.gob"}
+
+{"level":"info","ts":1762828640.7939887,"msg":"Métricas holdout","model":"RandomForest","accuracy":0.602423076923077,
+"f1":0.4727365467992859,"precision":0.36007614903453905,"recall":0.6879964367901418,"roc_auc":0.6646989018096988,
+"pr_auc":0.3999593814739298,"threshold":0.24}
+{"level":"info","ts":1762828641.125839,"msg":"Modelo salvo","path":"models/rf_model.gob"}
+
+{"level":"info","ts":1762832123.221357,"msg":"Métricas holdout","model":"RandomForest","accuracy":0.6050384615384615,
+"f1":0.4726002773355246,"precision":0.3612736052765891,"recall":0.6830970232350976,"roc_auc":0.6650401826478334,
+"pr_auc":0.4002296561978407,"threshold":0.245}
+{"level":"info","ts":1762832123.2942069,"msg":"Modelo salvo","path":"models/rf_model.gob"}

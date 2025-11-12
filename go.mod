@@ -1,0 +1,50 @@
+module antifraude
+
+go 1.23.0
+
+require (
+    codeberg.org/go-fonts/liberation v0.5.0
+    codeberg.org/go-latex/latex v0.1.0
+    codeberg.org/go-pdf/fpdf v0.10.0
+    git.sr.ht/~sbinet/gg v0.6.0
+    github.com/ajstarks/svgo v0.0.0-20211024235047-1546f124cd8b
+    github.com/bytedance/sonic v1.14.0
+    github.com/bytedance/sonic/loader v0.3.0
+    github.com/campoy/embedmd v1.0.0
+    github.com/cloudwego/base64x v0.1.6
+    github.com/gabriel-vasile/mimetype v1.4.8
+    github.com/gin-contrib/sse v1.1.0
+    github.com/gin-gonic/gin v1.11.0
+    github.com/go-playground/locales v0.14.1
+    github.com/go-playground/universal-translator v0.18.1
+    github.com/go-playground/validator/v10 v10.27.0
+    github.com/goccy/go-json v0.10.2
+    github.com/goccy/go-yaml v1.18.0
+    github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
+    github.com/json-iterator/go v1.1.12
+    github.com/klauspost/cpuid/v2 v2.3.0
+    github.com/leodido/go-urn v1.4.0
+    github.com/mattn/go-isatty v0.0.20
+    github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421
+    github.com/modern-go/reflect2 v1.0.2
+    github.com/pelletier/go-toml/v2 v2.2.4
+    github.com/pmezard/go-difflib v1.0.0
+    github.com/quic-go/qpack v0.5.1
+    github.com/quic-go/quic-go v0.54.0
+    github.com/twitchyliquid64/golang-asm v0.15.1
+    github.com/ugorji/go/codec v1.3.0
+    go.uber.org/mock v0.5.0
+    go.uber.org/multierr v1.10.0
+    go.uber.org/zap v1.27.0
+    golang.org/x/arch v0.20.0
+    golang.org/x/crypto v0.40.0
+    golang.org/x/image v0.25.0
+    golang.org/x/mod v0.25.0
+    golang.org/x/net v0.42.0
+    golang.org/x/sync v0.16.0
+    golang.org/x/sys v0.35.0
+    golang.org/x/text v0.27.0
+    golang.org/x/tools v0.34.0
+    gonum.org/v1/plot v0.16.0
+    google.golang.org/protobuf v1.36.9
+)
