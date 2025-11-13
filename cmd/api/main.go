@@ -36,10 +36,10 @@ func (r *ruleModel) PredictProba(X [][]float64) []float64 {
 func (r *ruleModel) Name() string { return "RuleModel" }
 func (r *ruleModel) score(v []float64) float64 {
     s := 0.05
-    if v[4] == 1 { s += 0.35 }
-    if v[5] == 1 { s += 0.1 }
-    if v[6] == 1 { s += 0.15 }
-    if v[7] == 1 { s += 0.15 }
+    if v[2] == 1 { s += 0.35 }
+    if v[3] == 1 { s += 0.1 }
+    if v[4] == 1 { s += 0.15 }
+    if v[5] == 1 { s += 0.15 }
     if v[len(v)-3] == 1 && v[0] > 200 { s += 0.2 }
     if v[1] < 0 { s += 0.3 }
     if s > 0.95 { s = 0.95 }

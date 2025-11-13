@@ -1,12 +1,12 @@
 package data
 
 import (
-    "encoding/csv"
-    "math/rand"
-    "os"
-    "strconv"
-    "strings"
-    "time"
+	"encoding/csv"
+	"math/rand"
+	"os"
+	"strconv"
+	"strings"
+	"time"
 )
 
 var categories = []string{"Alimentação", "Transporte", "Taxi", "Pedágio", "Hospedagem"}
@@ -43,6 +43,9 @@ func GenerateSyntheticExpenses(n int, fraudRate float64, outPath string) error {
             travellerID = "U" + strconv.Itoa(rand.Intn(5000))
         }
         approverID := "A" + strconv.Itoa(rand.Intn(800))
+        if rand.Float64() < 0.03 {
+            approverID = requesterID
+        }
 
         reqOffset := rand.Intn(300)
         travelOffset := reqOffset + rand.Intn(30)
@@ -79,26 +82,35 @@ func GenerateSyntheticExpenses(n int, fraudRate float64, outPath string) error {
 
         fraud := 0
         score := 0.0
+        flags := 0
         if requesterID == approverID {
             score += 0.35
+            flags++
         }
         if requesterID == travellerID {
             score += 0.1
+            flags++
         }
         if round {
             score += 0.15
+            flags++
         }
         if multiple5 {
             score += 0.15
+            flags++
         }
         if travelDate.Before(reqDate) {
             score += 0.3
+            flags++
         }
         if cat == "Taxi" && amount > 200 {
             score += 0.2
+            flags++
         }
-        base := 0.05 + rand.Float64()*0.05
-        if rand.Float64() < base+score {
+        base := fraudRate
+        if flags >= 2 || travelDate.Before(reqDate) {
+            fraud = 1
+        } else if rand.Float64() < base+score {
             fraud = 1
         }
 

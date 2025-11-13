@@ -20,10 +20,7 @@ func Vectorize(e data.Expense) ([]float64, []string) {
     names = append(names, "IntervaloSolicitante")
     vec = append(vec, intervalDays)
 
-    names = append(names, "DiaSemana")
-    vec = append(vec, float64(int(e.RequestDate.Weekday())))
-    names = append(names, "Mes")
-    vec = append(vec, float64(int(e.RequestDate.Month())))
+    
 
     sameApprover := boolToFloat(e.ApproverID == e.RequesterID)
     reqIsTraveller := boolToFloat(e.RequesterID == e.TravellerID)

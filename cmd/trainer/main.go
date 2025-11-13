@@ -1,27 +1,28 @@
 package main
 
 import (
-    "encoding/csv"
-    "encoding/gob"
-    "flag"
-    "fmt"
-    "math"
-    "sort"
-    "os"
-    "strconv"
-    "time"
+	"encoding/csv"
+	"encoding/gob"
+	"flag"
+	"fmt"
+	"math"
+	"math/rand"
+	"os"
+	"sort"
+	"strconv"
+	"time"
 
-    "gonum.org/v1/plot"
-    "gonum.org/v1/plot/plotter"
-    "gonum.org/v1/plot/plotutil"
-    "gonum.org/v1/plot/vg"
+	"gonum.org/v1/plot"
+	"gonum.org/v1/plot/plotter"
+	"gonum.org/v1/plot/plotutil"
+	"gonum.org/v1/plot/vg"
 
-    "go.uber.org/zap"
+	"go.uber.org/zap"
 
-    "antifraude/internal/data"
-    "antifraude/internal/features"
-    "antifraude/internal/models"
-    "antifraude/pkg/utils"
+	"antifraude/internal/data"
+	"antifraude/internal/features"
+	"antifraude/internal/models"
+	"antifraude/pkg/utils"
 )
 
 func main() {
@@ -44,6 +45,9 @@ func main() {
     curveLog := flag.Bool("curve_log", true, "Usar escala logarítmica para os tamanhos")
     threshold := flag.Float64("threshold", 0.5, "Threshold para classificação (métricas F1/precisão/recall)")
     thresholdAuto := flag.Bool("threshold_auto", true, "Escolher automaticamente o threshold que maximiza F1 no holdout")
+    thresholdMetric := flag.String("threshold_metric", "f1", "Métrica para escolher threshold: f1|acc")
+    thrMin := flag.Float64("threshold_min", 0.05, "Limite inferior para threshold automático")
+    thrMax := flag.Float64("threshold_max", 0.95, "Limite superior para threshold automático")
     flag.Parse()
 
     if *regen {
@@ -82,9 +86,37 @@ func main() {
         y = append(y, fraud)
     }
 
-    split := int(0.8 * float64(len(X)))
-    Xtrain, ytrain := X[:split], y[:split]
-    Xtest, ytest := X[split:], y[split:]
+    rand.Seed(time.Now().UnixNano())
+    idx := rand.Perm(len(X))
+    shX := make([][]float64, len(X))
+    shY := make([]int, len(y))
+    for i, j := range idx { shX[i] = X[j]; shY[i] = y[j] }
+    X, y = shX, shY
+
+    var pos, neg int
+    for i := range y { if y[i] == 1 { pos++ } else { neg++ } }
+    logger.Info("Distribuição da classe", zap.Int("positivos", pos), zap.Int("negativos", neg))
+
+    var posIdx, negIdx []int
+    for i := range y { if y[i] == 1 { posIdx = append(posIdx, i) } else { negIdx = append(negIdx, i) } }
+    rp := rand.Perm(len(posIdx))
+    rn := rand.Perm(len(negIdx))
+    pTrain := int(0.8 * float64(len(posIdx)))
+    nTrain := int(0.8 * float64(len(negIdx)))
+    trainIdx := make([]int, 0, pTrain+nTrain)
+    testIdx := make([]int, 0, len(posIdx)-pTrain+len(negIdx)-nTrain)
+    for i := 0; i < len(posIdx); i++ { if i < pTrain { trainIdx = append(trainIdx, posIdx[rp[i]]) } else { testIdx = append(testIdx, posIdx[rp[i]]) } }
+    for i := 0; i < len(negIdx); i++ { if i < nTrain { trainIdx = append(trainIdx, negIdx[rn[i]]) } else { testIdx = append(testIdx, negIdx[rn[i]]) } }
+    rTrain := rand.Perm(len(trainIdx))
+    rTest := rand.Perm(len(testIdx))
+    var Xtrain [][]float64
+    var ytrain []int
+    var Xtest [][]float64
+    var ytest []int
+    Xtrain, ytrain = make([][]float64, len(trainIdx)), make([]int, len(trainIdx))
+    Xtest, ytest = make([][]float64, len(testIdx)), make([]int, len(testIdx))
+    for i := range rTrain { idx := trainIdx[rTrain[i]]; Xtrain[i] = X[idx]; ytrain[i] = y[idx] }
+    for i := range rTest { idx := testIdx[rTest[i]]; Xtest[i] = X[idx]; ytest[i] = y[idx] }
 
     var mdl models.Model
     var path string
@@ -143,8 +175,18 @@ func main() {
     }
 
     probaTest := mdl.PredictProba(Xtest)
+    valSize := int(0.1 * float64(len(Xtrain)))
+    if valSize < 100 { valSize = 100 }
+    if valSize > len(Xtrain) { valSize = len(Xtrain) }
+    valX := Xtrain[len(Xtrain)-valSize:]
+    valY := ytrain[len(ytrain)-valSize:]
+    probaVal := mdl.PredictProba(valX)
     thrUsed := *threshold
-    if *thresholdAuto { thrUsed, _ = bestThresholdF1(ytest, probaTest) }
+    if *thresholdAuto {
+        if *thresholdMetric == "acc" { thrUsed, _ = bestThresholdAcc(valY, probaVal) } else { thrUsed, _ = bestThresholdF1(valY, probaVal) }
+    }
+    if thrUsed < *thrMin { thrUsed = *thrMin }
+    if thrUsed > *thrMax { thrUsed = *thrMax }
     preds := probaToPred(probaTest, thrUsed)
     acc := accuracy(ytest, preds)
     prec, rec, f1 := prf1(ytest, probaTest, thrUsed)
@@ -187,8 +229,18 @@ func main() {
             if err := cm.Fit(subX, subY); err != nil { logger.Fatal("Falha ao treinar no ponto da curva", zap.Error(err)) }
             probaTrain := cm.PredictProba(subX)
             probaTest := cm.PredictProba(Xtest)
+            vs := int(0.1 * float64(len(subX)))
+            if vs < 50 { vs = 50 }
+            if vs > len(subX) { vs = len(subX) }
+            vX := subX[len(subX)-vs:]
+            vY := subY[len(subY)-vs:]
+            probaV := cm.PredictProba(vX)
             thrCurve := *threshold
-            if *thresholdAuto { thrCurve, _ = bestThresholdF1(ytest, probaTest) }
+            if *thresholdAuto {
+                if *thresholdMetric == "acc" { thrCurve, _ = bestThresholdAcc(vY, probaV) } else { thrCurve, _ = bestThresholdF1(vY, probaV) }
+            }
+            if thrCurve < *thrMin { thrCurve = *thrMin }
+            if thrCurve > *thrMax { thrCurve = *thrMax }
             pTrain := probaToPred(probaTrain, thrCurve)
             pTest := probaToPred(probaTest, thrCurve)
             trainAcc[k] = accuracy(subY, pTrain)
@@ -409,6 +461,20 @@ func bestThresholdF1(y []int, ps []float64) (thr float64, best float64) {
         t := float64(i) / float64(steps)
         _, _, f1 := prf1(y, ps, t)
         if f1 > best { best = f1; thr = t }
+    }
+    return
+}
+
+func bestThresholdAcc(y []int, ps []float64) (thr float64, best float64) {
+    if len(ps) == 0 { return 0.5, 0 }
+    steps := 200
+    best = -1
+    thr = 0.5
+    for i := 0; i <= steps; i++ {
+        t := float64(i) / float64(steps)
+        p := probaToPred(ps, t)
+        a := accuracy(y, p)
+        if a > best { best = a; thr = t }
     }
     return
 }
